@@ -1,0 +1,51 @@
+name: Build and Publish playground Image
+
+on:
+  push:
+    branches: ["main"] # adjust if you use another default branch
+    paths:
+      - "containers/**" # only rebuild when Dockerfile or related files change
+      - ".github/workflows/container.yaml"
+  workflow_dispatch: # allow manual trigger
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+
+      - name: Log in to GHCR
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set Lowercase Repository Name
+        id: set_lowercase_repo
+        run: |
+          LOWERCASE_REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "image_repo=${LOWERCASE_REPO}" >> $GITHUB_OUTPUT
+          echo "IMAGE_REPO=${LOWERCASE_REPO}" >> $GITHUB_ENV
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
+        with:
+          images: ghcr.io/${{ env.IMAGE_REPO }}/playground
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
+        with:
+          context: ./containers/playground/
+          file: ./containers/playground/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
