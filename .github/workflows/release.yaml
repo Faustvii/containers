@@ -1,0 +1,54 @@
+---
+name: "Release"
+
+# release-please keeps a release PR open per image (konflate-tool, playground)
+# from the conventional commits touching that directory. Merging it tags
+# `<image>-v<version>` with a GitHub release, and this workflow then builds and
+# pushes `ghcr.io/faustvii/containers/<image>:<version>`. The semver tag is what
+# lets Renovate look up the image's labels and match the GitHub release notes.
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: Release please
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      releases: ${{ toJSON(steps.release.outputs) }}
+      paths_released: ${{ steps.release.outputs.paths_released }}
+    steps:
+      - name: Release please
+        id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    name: Build ${{ matrix.image }}
+    needs: release-please
+    if: ${{ needs.release-please.outputs.paths_released != '[]' && needs.release-please.outputs.paths_released != '' }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJSON(needs.release-please.outputs.paths_released) }}
+    uses: $/.github/workflows/image-builder.yaml
+    with:
+      image: ${{ matrix.image }}
+      version: ${{ fromJSON(needs.release-please.outputs.releases)[format('{0}--version', matrix.image)] }}
+      release: true
