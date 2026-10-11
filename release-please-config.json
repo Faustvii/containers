@@ -5,12 +5,10 @@
   "bootstrap-sha": "98b4efcae73cd0e4bcb69f1a729d425f9b4c7bfc",
   "packages": {
     "konflate-tool": {
-      "component": "konflate-tool",
-      "release-as": "1.0.0"
+      "component": "konflate-tool"
     },
     "playground": {
-      "component": "playground",
-      "release-as": "1.0.0"
+      "component": "playground"
     }
   }
 }
