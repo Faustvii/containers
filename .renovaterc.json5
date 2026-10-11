@@ -1,0 +1,31 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: [
+    "github>home-operations/renovate-presets#8.1.0",
+    "github>Faustvii/home-ops//.renovate/labels.json5",
+  ],
+  dependencyDashboard: true,
+  dependencyDashboardTitle: "Renovate Dashboard 🤖",
+  suppressNotifications: ["prEditedNotification", "prIgnoreNotification"],
+  postUpdateOptions: ["gomodTidy"],
+  packageRules: [
+    {
+      // The preset's :automergeBranch pushes straight to main, which would
+      // skip the review. Instead open a PR and turn on GitHub's auto-merge;
+      // the main ruleset holds it until kritika approves.
+      description: "Auto-merge non-major updates once kritika approves",
+      matchUpdateTypes: ["minor", "patch", "digest", "pin", "pinDigest"],
+      automerge: true,
+      automergeType: "pr",
+      platformAutomerge: true,
+    },
+    {
+      // The preset puts 0.x minors on major- branches as breaking; keep them
+      // out of auto-merge too.
+      description: "No auto-merge for zer0ver minors",
+      matchUpdateTypes: ["minor"],
+      matchCurrentVersion: "/^v?0\\./",
+      automerge: false,
+    },
+  ],
+}
