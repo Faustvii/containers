@@ -4,6 +4,9 @@ name: "Image builder"
 # Builds one image from `<image>/docker-bake.hcl` (target `image-all`). With
 # `release`, pushes `ghcr.io/faustvii/containers/<image>:<version>` and attests
 # its build provenance; otherwise only builds.
+#
+# Declares no permissions so it inherits the caller's: pull requests grant
+# `contents: read`, releases also grant packages/id-token/attestations write.
 on:
   workflow_call:
     inputs:
@@ -20,17 +23,10 @@ on:
         type: boolean
         default: false
 
-permissions: {}
-
 jobs:
   build:
     name: Build ${{ inputs.image }}
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-      attestations: write
     env:
       IMAGE: ghcr.io/faustvii/containers/${{ inputs.image }}
     steps:
@@ -54,9 +50,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # The source label points at the image's directory: Renovate turns a
-      # /tree/<ref>/<dir> URL into a sourceDirectory and reads that
-      # directory's CHANGELOG.md for release notes.
+      - name: Validate release inputs
+        if: ${{ inputs.release }}
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [ -z "${VERSION}" ]; then
+            echo "::error::version input is required when release is true"
+            exit 1
+          fi
+
+      # The source label points at the image's directory at the built commit:
+      # Renovate turns a /tree/<ref>/<dir> URL into a sourceDirectory and reads
+      # that directory's CHANGELOG.md for release notes.
       - name: Metadata
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
@@ -67,7 +73,7 @@ jobs:
             type=semver,pattern={{version}},value=${{ inputs.version }},enable=${{ inputs.release }}
           labels: |
             org.opencontainers.image.title=${{ inputs.image }}
-            org.opencontainers.image.source=https://github.com/Faustvii/containers/tree/main/${{ inputs.image }}
+            org.opencontainers.image.source=https://github.com/Faustvii/containers/tree/${{ github.sha }}/${{ inputs.image }}
 
       - name: Build
         id: bake
