@@ -4,8 +4,8 @@ on:
   push:
     branches: ["main"] # adjust if you use another default branch
     paths:
-      - "containers/playground/**"
-      - ".github/workflows/container.yaml"
+      - "playground/**"
+      - ".github/workflows/playground.yaml"
   workflow_dispatch: # allow manual trigger
 
 jobs:
@@ -44,8 +44,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
         with:
-          context: ./containers/playground/
-          file: ./containers/playground/Dockerfile
+          context: ./playground/
+          file: ./playground/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

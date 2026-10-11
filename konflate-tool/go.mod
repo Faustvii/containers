@@ -1,4 +1,4 @@
-module github.com/faustvii/containers/containers/konflate-tool
+module github.com/faustvii/containers/konflate-tool
 
 go 1.26.0
 
