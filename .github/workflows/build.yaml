@@ -1,0 +1,43 @@
+---
+name: "Build"
+
+# Builds each image on pull requests without pushing; images are only
+# published from a release (see release.yaml).
+on:
+  pull_request:
+    paths:
+      - konflate-tool/**
+      - playground/**
+      - .github/workflows/build.yaml
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build ${{ matrix.image }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["konflate-tool", "playground"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ${{ matrix.image }}
+          platforms: ${{ matrix.image == 'playground' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
+          push: false
