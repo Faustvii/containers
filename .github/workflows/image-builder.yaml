@@ -6,7 +6,8 @@ name: "Image builder"
 # its build provenance; otherwise only builds.
 #
 # Declares no permissions so it inherits the caller's: pull requests grant
-# `contents: read`, releases also grant packages/id-token/attestations write.
+# `contents: read`, releases also grant packages/id-token/attestations/
+# artifact-metadata write.
 on:
   workflow_call:
     inputs:
