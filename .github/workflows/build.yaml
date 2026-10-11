@@ -1,14 +1,11 @@
 ---
 name: "Build"
 
-# Builds each image on pull requests without pushing; images are only
-# published from a release (see release.yaml).
+# Builds the images a pull request touches, without pushing; images are only
+# published from a release (see release.yaml). An image is any top-level
+# directory with a docker-bake.hcl. Changes to the build workflows rebuild all.
 on:
   pull_request:
-    paths:
-      - konflate-tool/**
-      - playground/**
-      - .github/workflows/build.yaml
 
 permissions: {}
 
@@ -17,27 +14,69 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build ${{ matrix.image }}
+  changed:
+    name: Changed images
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        image: ["konflate-tool", "playground"]
+    outputs:
+      images: ${{ steps.images.outputs.images }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up Buildx
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-
-      - name: Build
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+      - name: Changed files
+        id: changed-files
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         with:
-          context: ${{ matrix.image }}
-          platforms: ${{ matrix.image == 'playground' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
-          push: false
+          json: true
+          escape_json: false
+
+      - name: Images
+        id: images
+        env:
+          CHANGED: ${{ steps.changed-files.outputs.all_changed_files }}
+        run: |
+          images=$(
+            for bake in */docker-bake.hcl; do
+              image=${bake%%/*}
+              jq --exit-status --arg image "${image}" \
+                'any(.[]; startswith($image + "/") or test("^\\.github/workflows/(build|image-builder)\\.yaml$"))' \
+                <<<"${CHANGED}" >/dev/null && echo "${image}"
+            done | jq --raw-input --null-input --compact-output '[inputs]'
+          )
+          echo "images=${images}" >> "$GITHUB_OUTPUT"
+          echo "images: ${images}" >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: Build ${{ matrix.image }}
+    needs: changed
+    if: ${{ needs.changed.outputs.images != '[]' }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJSON(needs.changed.outputs.images) }}
+    uses: $/.github/workflows/image-builder.yaml
+    with:
+      image: ${{ matrix.image }}
+
+  # Single check to require in rulesets: passes when every image built or
+  # none needed building.
+  status:
+    name: Build success
+    needs: [changed, build]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Any jobs failed?
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
