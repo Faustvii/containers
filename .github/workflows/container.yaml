@@ -4,7 +4,7 @@ on:
   push:
     branches: ["main"] # adjust if you use another default branch
     paths:
-      - "containers/**" # only rebuild when Dockerfile or related files change
+      - "containers/playground/**"
       - ".github/workflows/container.yaml"
   workflow_dispatch: # allow manual trigger
 
