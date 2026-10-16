@@ -1,7 +1,7 @@
 ---
 name: "Release"
 
-# release-please keeps a release PR open per image (konflate-tool, playground)
+# release-please keeps a release PR open per image directory
 # from the conventional commits touching that directory. Merging it tags
 # `<image>-v<version>` with a GitHub release, and this workflow then builds and
 # pushes `ghcr.io/faustvii/containers/<image>:<version>`. The semver tag is what
