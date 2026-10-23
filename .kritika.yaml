@@ -1,0 +1,6 @@
+---
+# yaml-language-server: $schema=https://kritika.home-operations.com/kritika.schema.json
+# Image builds and CI workflows are rated high or critical; the score decides.
+# Renovate keeps major updates out of auto-merge.
+confidence:
+  risk: critical
