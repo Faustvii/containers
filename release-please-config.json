@@ -4,6 +4,9 @@
   "include-component-in-tag": true,
   "bootstrap-sha": "98b4efcae73cd0e4bcb69f1a729d425f9b4c7bfc",
   "packages": {
+    "actions-runner": {
+      "component": "actions-runner"
+    },
     "playground": {
       "component": "playground"
     }
