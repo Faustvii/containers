@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.2](https://github.com/Faustvii/containers/compare/playground-v1.0.1...playground-v1.0.2) (2026-11-06)
+
+
+### Bug Fixes
+
+* **container:** update image alpine (be26560 ➔ ce9e1e6) ([#44](https://github.com/Faustvii/containers/issues/44)) ([484ee68](https://github.com/Faustvii/containers/commit/484ee685e6d0ac0b452eeeeef707a2342c5acfa7))
+* **container:** update image alpine (ce9e1e6 ➔ 3f4d6b3) ([#46](https://github.com/Faustvii/containers/issues/46)) ([802f91c](https://github.com/Faustvii/containers/commit/802f91c9d04f61d8d609b5b0b935ee7c3594139a))
+
 ## [1.0.1](https://github.com/Faustvii/containers/compare/playground-v1.0.0...playground-v1.0.1) (2026-10-23)
 
 
